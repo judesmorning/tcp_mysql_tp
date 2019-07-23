@@ -5,7 +5,10 @@ Parse::Parse(QObject *parent) : QObject(parent)
 
 }
 
-
+Parse::~Parse()
+{
+    TP_FLAG_RUN = false;
+}
 /*****************************************************************/
 //作者:朱小勇
 //函数名称:初始化
@@ -30,10 +33,10 @@ void Parse::init()
 /*****************************************************************/
 void Parse::getSoucreDataSlot(const QByteArray &ba)
 {
+    Mymethod::record("rcvData:"+ba.toHex().toUpper());
     {
         std::lock_guard<std::mutex> lck(m_data_mutex);
         allData.append(ba);
-        Mymethod::record("rcvData:"+ba.toHex().toUpper());
         Mymethod::record("allData:"+allData.toHex().toUpper());
     }
     std::thread getPacketThread(&Parse::getPacket,this);
@@ -49,12 +52,14 @@ void Parse::getSoucreDataSlot(const QByteArray &ba)
 void Parse::getPacket()
 {
     Mymethod::record("进入解析线程");
-    std::lock_guard<std::mutex> lck(m_data_mutex);//给当前线程加锁
     int head = allData.indexOf(PacketConfig::getInstace()->getAllHead());//报文头的位置
     QByteArray currentBa;
     while (NOT_FOUND != head)
     {
-        allData = allData.mid(head);//去掉报头之前的,此处应该加锁
+        {
+            std::lock_guard<std::mutex> lck(m_data_mutex);//给当前线程加锁
+            allData = allData.mid(head);//去掉报头之前的,此处应该加锁
+        }
         if (allData.size() >= PACKET_ALL_LENTH)//长度够,进行解析
         {
             currentBa = allData.mid(MID_FROM_ZERO, PACKET_ALL_LENTH);//获取当前完成包
@@ -66,8 +71,6 @@ void Parse::getPacket()
                 memset(&allStruct,MID_FROM_ZERO,sizeof(AllStruct));
                 memcpy(&allStruct,currentBa.data(),sizeof(AllStruct));
 
-
-
                 /*存主表,并获取bid*/
                 //伺服分系统状态报文
                 QString timeStr = Mymethod::getCurentTimeStr();
@@ -75,24 +78,36 @@ void Parse::getPacket()
                 memcpy(s,&(allStruct.servo_Subsystem),sizeof(Servo_Subsystem));
                 Packet_Servo_Subsystem* packet_Servo_Subsystem = new Packet_Servo_Subsystem(s,sizeof(Servo_Subsystem));
                 packet_Servo_Subsystem->setTime(timeStr);
-				packet_Servo_Subsystem->setPacketName("伺服分系统状态报文");//设置报文类型
+                int id = packet_Servo_Subsystem->exec_id();
+
+                delete packet_Servo_Subsystem;
+                packet_Servo_Subsystem = nullptr;
                 /*初始化其他报文类*/
+
                 //发射分系统状态报文
                 Transmit_subsystem* transmit_subsystem = new Transmit_subsystem;
                 memcpy(transmit_subsystem,&(allStruct.transmit_subsystem),sizeof(Transmit_subsystem));
                 Packet_Transmit_Subsystem* packet_Transmit_Subsystem = new Packet_Transmit_Subsystem(transmit_subsystem,sizeof(Transmit_subsystem));
-                packet_Transmit_Subsystem->setBid(0);//设置bid
+                packet_Transmit_Subsystem->setBid(id);//设置bid
                 packet_Transmit_Subsystem->setPacketName("发射分系统状态报文");//设置报文类型
                 packet_Transmit_Subsystem->setTime(timeStr);
-                
+
                 /*存入队列*/
                 {
-                    std::lock_guard<std::mutex> lck(m_queue_mutex);
-                    allPacket.push(packet_Transmit_Subsystem);
+#if OPEN_IF
+                    {
+                        std::unique_lock<std::mutex> lck(m_queue_mutex);
+                        allPacket.push(packet_Transmit_Subsystem);
+                    }
+                    cv.notify_one();
+#endif
                 }
                 /*结束一次大包解析*/
                 //去掉头以做下次循环
-                allData = allData.mid(PacketConfig::getInstace()->getAllHead().size());
+                {
+                    std::lock_guard<std::mutex> lck(m_data_mutex);//给当前线程加锁
+                    allData = allData.mid(PacketConfig::getInstace()->getAllHead().size());
+                }
             }
             else
             {
@@ -115,21 +130,23 @@ void Parse::getPacket()
 void Parse::doExec()
 {
     //线程池
+#if OPEN_IF
     Mymethod::record("进入线程池调度线程");
     QThreadPool tp;
     tp.setMaxThreadCount(TP_COUNT);
-    while(true)
+    while(TP_FLAG_RUN)
     {
-        if(!allPacket.empty())
         {
+            std::unique_lock<std::mutex> lck(m_queue_mutex);
+            while(allPacket.empty())
             {
-                std::lock_guard<std::mutex> lck(m_queue_mutex);
-                AbsPacket* p = allPacket.front();
-                tp.start(new Myrun(p));
-                allPacket.pop();
+                cv.wait(lck);
             }
+            AbsPacket* p = allPacket.front();
+            tp.start(new Myrun(p));
+            allPacket.pop();
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(TP_WAITE_TIME));
     }
     Mymethod::record("退出线程池调度线程");
+#endif
 }
