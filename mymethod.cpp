@@ -3,12 +3,12 @@
 #include "includes.h"
 #include <QDateTime>
 /*****************************************************************/
-//×÷Õß:ÖìĞ¡ÓÂ
-//º¯ÊıÃû³Æ:¹¹Ôìº¯Êı
-//º¯Êı²ÎÊı:NULL
-//º¯Êı·µ»ØÖµ:NULL
-//º¯Êı×÷ÓÃ:NULL
-//±¸×¢:NULL
+//ä½œè€…:æœ±å°å‹‡
+//å‡½æ•°åç§°:æ„é€ å‡½æ•°
+//å‡½æ•°å‚æ•°:NULL
+//å‡½æ•°è¿”å›å€¼:NULL
+//å‡½æ•°ä½œç”¨:NULL
+//å¤‡æ³¨:NULL
 /*****************************************************************/
 Mymethod::Mymethod()
 {
@@ -16,214 +16,43 @@ Mymethod::Mymethod()
 }
 
 /*****************************************************************/
-//×÷Õß:²ÜÔóÎÄ
-//º¯ÊıÃû³Æ:NULL
-//º¯Êı²ÎÊı:NULL
-//º¯Êı·µ»ØÖµ:NULL
-//º¯Êı×÷ÓÃ:NULL
-//±¸×¢:ÖìĞ¡ÓÂĞŞ¸Ä²¿·Ö´úÂë
+//ä½œè€…:æ›¹æ³½æ–‡
+//å‡½æ•°åç§°:NULL
+//å‡½æ•°å‚æ•°:NULL
+//å‡½æ•°è¿”å›å€¼:NULL
+//å‡½æ•°ä½œç”¨:NULL
+//å¤‡æ³¨:æœ±å°å‹‡ä¿®æ”¹éƒ¨åˆ†ä»£ç 
 /*****************************************************************/
 bool Mymethod::getPacketType(const QByteArray &ba)
 {
     bool ret = true;
 
-    QByteArray data = ba;
-    RET_VALUE_IF_NOT_EAQU((int)data.length(),PACKET_ALL_LENTH,false);
-    std::vector<QByteArray> heads = PacketConfig::getInstace()->getHeads();
-    AllStruct allStruct;
-    QByteArray checkSumBa;
-    int headCount = 0;
-    memset(&allStruct,0,sizeof(PACKET_ALL_LENTH));
-    memcpy(&allStruct,ba.data(),PACKET_ALL_LENTH);
-    /*ËÅ·ş·ÖÏµÍ³×´Ì¬±¨ÎÄ*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.servo_Subsystem.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.servo_Subsystem.packet_length,sizeof(Servo_Subsystem),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Servo_Subsystem));
-    memcpy(checkSumBa.data(),&allStruct.servo_Subsystem,sizeof(Servo_Subsystem));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*·¢Éä·ÖÏµÍ³×´Ì¬±¨ÎÄ*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.transmit_subsystem.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.transmit_subsystem.packet_length,sizeof(Transmit_subsystem),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Transmit_subsystem));
-    memcpy(checkSumBa.data(),&allStruct.transmit_subsystem,sizeof(Transmit_subsystem));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*½ÓÊÕ·ÖÏµÍ³×´Ì¬±¨ÎÄ1*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.receiving_subsystem.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.receiving_subsystem.packet_length,sizeof(Receiving_subsystem),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Receiving_subsystem));
-    memcpy(checkSumBa.data(),&allStruct.receiving_subsystem,sizeof(Receiving_subsystem));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*½ÓÊÕ·ÖÏµÍ³×´Ì¬±¨ÎÄ2*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.receive_subsystem_status_message.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.receive_subsystem_status_message.packet_length,sizeof(Receive_subsystem_status_message),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Receive_subsystem_status_message));
-    memcpy(checkSumBa.data(),&allStruct.receive_subsystem_status_message,sizeof(Receive_subsystem_status_message));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*µçÔ´·ÖÏµÍ³×´Ì¬±¨ÎÄ*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.power_subsystem_status_message.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.power_subsystem_status_message.packet_length,sizeof(Power_subsystem_status_message),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Power_subsystem_status_message));
-    memcpy(checkSumBa.data(),&allStruct.power_subsystem_status_message,sizeof(Power_subsystem_status_message));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*ÌìÀ¡·ÖÏµÍ³×´Ì¬1*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.antenna_feeder_subsystem_status.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.antenna_feeder_subsystem_status.packet_length,sizeof(Antenna_feeder_subsystem_status),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Antenna_feeder_subsystem_status));
-    memcpy(checkSumBa.data(),&allStruct.antenna_feeder_subsystem_status,sizeof(Antenna_feeder_subsystem_status));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*ÌìÀ¡·ÖÏµÍ³×´Ì¬2*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.antenna_feeder_subsystem_status_2.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.antenna_feeder_subsystem_status_2.packet_length,sizeof(Antenna_feeder_subsystem_status_2),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Antenna_feeder_subsystem_status_2));
-    memcpy(checkSumBa.data(),&allStruct.antenna_feeder_subsystem_status_2,sizeof(Antenna_feeder_subsystem_status_2));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*¿Õµ÷×´Ì¬*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.ac_state.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.ac_state.packet_length,sizeof(AC_State),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(AC_State));
-    memcpy(checkSumBa.data(),&allStruct.ac_state,sizeof(AC_State));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*ÌìÀ¡·ÖÏµÍ³Ñ¯ÎÊ²¨¿ØÆ÷ÏàÎ»Öµ*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.antenna_feeder_subsystem_asks_for_wave_controller_phase_value.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.antenna_feeder_subsystem_asks_for_wave_controller_phase_value.packet_length,sizeof(Antenna_feeder_subsystem_asks_for_wave_controller_phase_value),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(Antenna_feeder_subsystem_asks_for_wave_controller_phase_value));
-    memcpy(checkSumBa.data(),&allStruct.antenna_feeder_subsystem_asks_for_wave_controller_phase_value,sizeof(Antenna_feeder_subsystem_asks_for_wave_controller_phase_value));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*Íâ²Î¿¼»ú×´Ì¬*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.external_reference_extension_status.header,heads[headCount++].data(),HEADER_LENTH_2),VALUE_ZERO,false);//±¨ÎÄÍ·
-    RET_VALUE_IF_NOT_EAQU(allStruct.external_reference_extension_status.packet_length,sizeof(External_reference_extension_status),false);//±¨ÎÄ³¤¶È
-    checkSumBa.resize(sizeof(External_reference_extension_status));
-    memcpy(checkSumBa.data(),&allStruct.external_reference_extension_status,sizeof(External_reference_extension_status));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*Í¨Ñ¶×´Ì¬*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.communication_status.header,heads[headCount++].data(),HEADER_LENTH_3),VALUE_ZERO,false);//±¨ÎÄÍ·
-    checkSumBa.resize(sizeof(Communication_status));
-    memcpy(checkSumBa.data(),&allStruct.communication_status,sizeof(Communication_status));
-    RET_VALUE_IF_EAQU(getSum(checkSumBa),false,false);
-    /*²âÊÔÇø¾ùÖµ*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.test_area_mean_value.frame_head,heads[headCount++].data(),HEADER_LENTH_12),VALUE_ZERO,false);//±¨ÎÄÍ·
-    /*¹¤×÷Çø¾ùÖµ*/
-    RET_VALUE_IF_NOT_EAQU(memcmp(allStruct.work_area_mean_value.frame_head,heads[headCount].data(),HEADER_LENTH_12),VALUE_ZERO,false);//±¨ÎÄÍ·
-#if CLOSE_IF
-    std::vector<QByteArray> heads = PacketConfig::getInstace()->getHeads();
-    for(int j=0;j<(int)heads.size()-3;j++)
-    {
-        int lenth = (int)data[ret+2];
-        if(data[ret]==heads[j][0]&&data[ret+1]==heads[j][1])
-        {
-            uchar Sum = 0;
-            for(int k = ret+2;k<lenth-1;k++)
-            {
-                Sum += data[k];
-            }
-            if(Sum == data[lenth])
-            {
-                ok = true;
-                return ok;
-            }
-            else
-            {
-                ok = false;
-                return ok;
-            }
-        }
-        else
-        {
-            ok = false;
-            return ok;
-        }
-        data.remove(ret,lenth);
-    }
-    int j=(int)heads.size()-3;
-    int le = 7;
-    if(data[ret]==heads[j][0]&&data[ret+1]==heads[j][1]&&data[ret+2]==heads[j][2])
-    {
-        uchar sSum = 0;
-        for(int k = ret+3;k<le-1;k++)
-        {
-            sSum += data[k];
-        }
-        if(sSum == data[le])
-        {
-            ok = true;
-            return ok;
-        }
-        else
-        {
-
-            ok = false;
-            return ok;
-        }
-
-    }
-    else
-    {
-        ok = false;
-        return ok;
-    }
-    data.remove(ret,le);
-    int lens = 68;
-    if(data.length()==2*lens)
-    {
-        for(int j = (int)heads.size()-2;j<(int)heads.size();j++)
-        {
-            if(data[ret]==heads[j][0]&&data[ret+1]==heads[j][1]&&data[ret+2]==heads[j][2]&&data[ret+3]==heads[j][3]&&data[ret+4]==heads[j][4]&&data[ret+5]==heads[j][5]&&data[ret+6]==heads[j][6]&&data[ret+7]==heads[j][7]&&data[ret+8]==heads[j][8]&&data[ret+9]==heads[j][9]&&data[ret+10]==heads[j][10]&&data[ret+11]==heads[j][11])
-            {
-                ok = true;
-                return ok;
-            }
-            else
-            {
-                ok = false;
-                return ok;
-            }
-            data.remove(ret,lens);
-        }
-    }
-    else
-    {
-        ok = false;
-        return ok;
-    }
-
-#endif
     return ret;
 
 }
 
 /*****************************************************************/
-//×÷Õß:²ÜÔóÎÄ
-//º¯ÊıÃû³Æ:ÅĞ¶ÏÒ»¸öqbytearrayĞ£ÑéÊÇ·ñÕıÈ·
-//º¯Êı²ÎÊı:NULL
-//º¯Êı·µ»ØÖµ:NULL
-//º¯Êı×÷ÓÃ:NULL
-//±¸×¢:NULL
+//ä½œè€…:æ›¹æ³½æ–‡
+//å‡½æ•°åç§°:åˆ¤æ–­ä¸€ä¸ªqbytearrayæ ¡éªŒæ˜¯å¦æ­£ç¡®
+//å‡½æ•°å‚æ•°:NULL
+//å‡½æ•°è¿”å›å€¼:NULL
+//å‡½æ•°ä½œç”¨:NULL
+//å¤‡æ³¨:NULL
 /*****************************************************************/
 bool Mymethod::getSum(const QByteArray& temp)
 {
     bool ret = true;
-#if CLOSE_IF//´ò×®,ÔİÊ±²»ÖªµÀĞ£ÑéºÍ¼ÆËã·½Ê½
-    uchar mySum = 0;
-    int lenth = temp.length();
-    for(int i=2;i<lenth-1;i++)
-    {
-        mySum += (uchar)temp[i];
-    }
-    if(mySum != temp[lenth-1])
-    {
-        ret =false;
-    }
-#endif
+
     return ret;
 }
 
 /*****************************************************************/
-//×÷Õß:ÖìĞ¡ÓÂ
-//º¯ÊıÃû³Æ:NULL
-//º¯Êı²ÎÊı:NULL
-//º¯Êı·µ»ØÖµ:NULL
-//º¯Êı×÷ÓÃ:NULL
-//±¸×¢:NULL
+//ä½œè€…:æœ±å°å‹‡
+//å‡½æ•°åç§°:NULL
+//å‡½æ•°å‚æ•°:NULL
+//å‡½æ•°è¿”å›å€¼:NULL
+//å‡½æ•°ä½œç”¨:NULL
+//å¤‡æ³¨:NULL
 /*****************************************************************/
 QString Mymethod::getCurentTimeStr()
 {
@@ -234,12 +63,12 @@ QString Mymethod::getCurentTimeStr()
 }
 
 /*****************************************************************/
-//×÷Õß:ÖìĞ¡ÓÂ
-//º¯ÊıÃû³Æ:record
-//º¯Êı²ÎÊı:NULL
-//º¯Êı·µ»ØÖµ:NULL
-//º¯Êı×÷ÓÃ:NULL
-//±¸×¢:NULL
+//ä½œè€…:æœ±å°å‹‡
+//å‡½æ•°åç§°:record
+//å‡½æ•°å‚æ•°:NULL
+//å‡½æ•°è¿”å›å€¼:NULL
+//å‡½æ•°ä½œç”¨:NULL
+//å¤‡æ³¨:NULL
 /*****************************************************************/
 void Mymethod::record(QString info)
 {
