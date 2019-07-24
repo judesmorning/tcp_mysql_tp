@@ -10,17 +10,6 @@
 #include <QThreadPool>
 #include "packet_servo_subsystem.h"
 #include "packet_transmit_subsystem.h"
-#include "packet_receiving_subsystem.h"
-#include "packet_receive_subsystem_status_message.h"
-#include "packet_power_subsystem_status_message.h"
-#include "packet_antenna_feeder_subsystem_status.h"
-#include "packet_antenna_feeder_subsystem_status_2.h"
-#include "packet_ac_state.h"
-#include "packet_antenna_feeder_subsystem_asks_for_wave_controller_phase_value.h"
-#include "packet_external_reference_extension_status.h"
-#include "packet_communication_status.h"
-#include "packet_test_area_mean_value.h"
-#include "packet_work_area_mean_value.h"
 #include "myrun.h"
 #include "mymethod.h"
 
@@ -29,7 +18,7 @@ class Parse : public QObject
     Q_OBJECT
 public:
     explicit Parse(QObject *parent = nullptr);
-
+    virtual ~Parse();
 signals:
 
 public slots:
@@ -39,11 +28,15 @@ public slots:
 private:
      void getPacket();//原始数据解析出单个包存入队列
      void doExec();//线程池调度队列
+     volatile bool TP_FLAG_RUN = true;
 private:
-    QByteArray allData;//存储tcp接收的数据流
+    QByteArray tcpData;//存储tcp接收的数据流
     std::queue<AbsPacket*> allPacket;//队列,存完整的报文对象
+    std::queue<AllStruct*> allData;
     std::mutex m_queue_mutex;//队列锁
     std::mutex m_data_mutex; //源数据队列锁
+    std::condition_variable m_cv_packet;//packet条件变量
+    std::condition_variable m_cv_data;//data条件变量
 private:
 
 };
